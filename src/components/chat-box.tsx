@@ -1,32 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUpIcon, BarChart3Icon, FileTextIcon, LineChartIcon, CalculatorIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUpIcon } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "./button";
 import { chat } from "@/actions/chat";
 import { readStreamableValue } from "ai/rsc";
-import { cn } from "@/lib/utils";
-import MarkdownRenderer from "./markdown-renderer";
-
-const prompts = [
-    {
-        icon: <CalculatorIcon strokeWidth={1.8} className="size-5" />,
-        text: "Generate the monthly income statement",
-    },
-    {
-        icon: <LineChartIcon strokeWidth={1.8} className="size-5" />,
-        text: "Provide a 12-month cash flow forecast",
-    },
-    {
-        icon: <FileTextIcon strokeWidth={1.8} className="size-5" />,
-        text: "Book a journal entry",
-    },
-    {
-        icon: <BarChart3Icon strokeWidth={1.8} className="size-5" />,
-        text: "Create a real-time financial dashboard",
-    },
-];
 
 export type Message = {
     role: "user" | "assistant";
@@ -50,13 +29,6 @@ const Chatbot = () => {
     useEffect(() => {
         scrollToBottom();
     }, [input]);
-
-    const handlePromptClick = (text: string) => {
-        setInput(text);
-        if (inputRef.current) {
-            inputRef.current.textContent = text;
-        }
-    };
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;

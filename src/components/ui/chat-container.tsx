@@ -146,7 +146,7 @@ const ChatContainer: React.FC = () => {
                 Start a conversation
               </h3>
               <p className="text-muted-foreground text-sm max-w-md">
-                Ask me anything! I'm here to help you with information, 
+                Ask me anything! I&apos;m here to help you with information, 
                 answer questions, or just have a friendly chat.
               </p>
             </div>

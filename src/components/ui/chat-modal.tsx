@@ -75,7 +75,7 @@ const ChatModal: React.FC<ChatModalProps> = ({
                   AI Chat Assistant
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Ask me anything, I'm here to help!
+                  Ask me anything, I am here to help!
                 </p>
               </div>
               <button

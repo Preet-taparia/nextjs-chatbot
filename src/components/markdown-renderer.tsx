@@ -48,8 +48,8 @@ const MarkdownRenderer = ({ content, className }: MarkdownRendererProps) => {
                             {children}
                         </li>
                     ),
-                    // @ts-ignore
-                    code: ({ node, inline, className, children, ...props }) => {
+                    // @ts-expect-error ReactMarkdown’s type defs don’t include `node`
+                    code: ({ inline, className, children, ...props }) => {
                         return !inline ? (
                             <pre className="bg-muted/50 p-3 rounded-lg mb-3 last:mb-0 overflow-x-auto">
                                 <code className={cn("text-sm", className)} {...props}>

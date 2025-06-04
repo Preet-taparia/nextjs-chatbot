@@ -4,7 +4,7 @@ import { streamText } from 'ai';
 import { gemini } from '@/lib/gemini';
 import connectDB from '@/lib/mongodb';
 import ChatModel from '@/models/chat';
-import { Message, SendMessageRequest, ChatResponse } from '@/types/chat';
+import { Message, SendMessageRequest } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
 
 // Generate session ID if not provided
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB();
-    
+
     const chatSession = await ChatModel.findOne({ sessionId });
-    
+
     if (!chatSession) {
       return NextResponse.json({
         success: true,
@@ -91,16 +91,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Add user message to session
     chatSession.messages.push(userMessage);
 
-    // Prepare conversation history for AI
-    const conversationHistory = chatSession.messages.map(msg => ({
+    const conversationHistory = chatSession.messages.map((msg: Message) => ({
       role: msg.role,
       content: msg.content
     }));
 
-    // Get AI response using Gemini
+
     const { textStream } = streamText({
       model: gemini('gemini-1.5-flash'),
       messages: conversationHistory,
@@ -108,13 +106,11 @@ export async function POST(request: NextRequest) {
       maxTokens: 1000,
     });
 
-    // Collect the streamed response
     let aiResponseContent = '';
     for await (const chunk of textStream) {
       aiResponseContent += chunk;
     }
 
-    // Create AI message
     const aiMessage: Message = {
       id: uuidv4(),
       role: 'assistant',
@@ -123,10 +119,8 @@ export async function POST(request: NextRequest) {
       sessionId
     };
 
-    // Add AI message to session
     chatSession.messages.push(aiMessage);
 
-    // Save to database
     await chatSession.save();
 
     return NextResponse.json({
@@ -147,7 +141,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE: Clear chat history for a session
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -161,7 +154,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await connectDB();
-    
+
     await ChatModel.deleteOne({ sessionId });
 
     return NextResponse.json({

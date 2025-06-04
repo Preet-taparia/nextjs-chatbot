@@ -11,9 +11,8 @@ interface ChatMessageProps {
   isLast?: boolean;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
-  const isAI = message.role === 'assistant';
 
   return (
     <motion.div

@@ -15,10 +15,10 @@ export interface ChatSession {
   updatedAt: Date;
 }
 
-export interface ChatResponse {
+export interface ChatResponse<T = unknown> {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: T;
   error?: string;
 }
 
@@ -27,10 +27,8 @@ export interface SendMessageRequest {
   sessionId?: string;
 }
 
-export interface SendMessageResponse extends ChatResponse {
-  data?: {
-    userMessage: Message;
-    aiResponse: Message;
-    sessionId: string;
-  };
-}
+export type SendMessageResponse = ChatResponse<{
+  userMessage: Message;
+  aiResponse: Message;
+  sessionId: string;
+}>;

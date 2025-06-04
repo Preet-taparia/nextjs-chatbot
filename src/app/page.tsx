@@ -37,7 +37,7 @@ const HomePage: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold mb-2">AI Powered</h3>
               <p className="text-muted-foreground text-sm">
-                Powered by Google's Gemini AI for intelligent and contextual responses.
+                Powered by Google&apos;s Gemini AI for intelligent and contextual responses.
               </p>
             </div>
             

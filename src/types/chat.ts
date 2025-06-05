@@ -1,10 +1,8 @@
-// types/chat.ts
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  sessionId?: string;
 }
 
 export interface ChatSession {
@@ -24,11 +22,9 @@ export interface ChatResponse<T = unknown> {
 
 export interface SendMessageRequest {
   message: string;
-  sessionId?: string;
 }
 
 export type SendMessageResponse = ChatResponse<{
   userMessage: Message;
   aiResponse: Message;
-  sessionId: string;
 }>;

@@ -1,4 +1,3 @@
-// app/api/chat/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText } from 'ai';
 import { gemini } from '@/lib/gemini';
@@ -7,41 +6,21 @@ import ChatModel from '@/models/chat';
 import { Message, SendMessageRequest } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
 
-// Generate session ID if not provided
-function generateSessionId(): string {
-  return `session_${uuidv4()}_${Date.now()}`;
-}
-
-// GET: Retrieve chat history for a session
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('sessionId');
-
-    if (!sessionId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Session ID is required'
-      }, { status: 400 });
-    }
-
     await connectDB();
 
-    const chatSession = await ChatModel.findOne({ sessionId });
-
-    if (!chatSession) {
-      return NextResponse.json({
-        success: true,
-        data: { messages: [], sessionId }
-      });
-    }
+    const chatSessions = await ChatModel.find({}).sort({ updatedAt: -1 });    
+    const allMessages: Message[] = [];
+    chatSessions.forEach(session => {
+      allMessages.push(...session.messages);
+    });
+    
+    allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     return NextResponse.json({
       success: true,
-      data: {
-        messages: chatSession.messages,
-        sessionId: chatSession.sessionId
-      }
+      data: { messages: allMessages }
     });
 
   } catch (error) {
@@ -53,11 +32,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Send message and get AI response
 export async function POST(request: NextRequest) {
   try {
     const body: SendMessageRequest = await request.json();
-    const { message, sessionId: providedSessionId } = body;
+    const { message } = body;
 
     if (!message || !message.trim()) {
       return NextResponse.json({
@@ -68,36 +46,32 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Generate session ID if not provided
-    const sessionId = providedSessionId || generateSessionId();
+    const sessionId = `global_chat_${Date.now()}`;
 
-    // Create user message
     const userMessage: Message = {
       id: uuidv4(),
       role: 'user',
       content: message.trim(),
-      timestamp: new Date(),
-      sessionId
+      timestamp: new Date()
     };
 
-    // Find or create chat session
-    let chatSession = await ChatModel.findOne({ sessionId });
-    if (!chatSession) {
-      chatSession = new ChatModel({
-        sessionId,
-        messages: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-
-    chatSession.messages.push(userMessage);
-
-    const conversationHistory = chatSession.messages.map((msg: Message) => ({
+    const recentSessions = await ChatModel.find({}).sort({ updatedAt: -1 }).limit(5);
+    const recentMessages: Message[] = [];
+    
+    recentSessions.forEach(session => {
+      recentMessages.push(...session.messages);
+    });
+    
+    recentMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const conversationHistory = recentMessages.slice(-20).map((msg: Message) => ({
       role: msg.role,
       content: msg.content
     }));
 
+    conversationHistory.push({
+      role: userMessage.role,
+      content: userMessage.content
+    });
 
     const { textStream } = streamText({
       model: gemini('gemini-1.5-flash'),
@@ -115,11 +89,15 @@ export async function POST(request: NextRequest) {
       id: uuidv4(),
       role: 'assistant',
       content: aiResponseContent.trim(),
-      timestamp: new Date(),
-      sessionId
+      timestamp: new Date()
     };
 
-    chatSession.messages.push(aiMessage);
+    const chatSession = new ChatModel({
+      sessionId,
+      messages: [userMessage, aiMessage],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
     await chatSession.save();
 
@@ -127,8 +105,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         userMessage,
-        aiResponse: aiMessage,
-        sessionId
+        aiResponse: aiMessage
       }
     });
 
@@ -143,23 +120,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('sessionId');
-
-    if (!sessionId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Session ID is required'
-      }, { status: 400 });
-    }
-
     await connectDB();
-
-    await ChatModel.deleteOne({ sessionId });
+    await ChatModel.deleteMany({});
 
     return NextResponse.json({
       success: true,
-      message: 'Chat history cleared successfully'
+      message: 'All chat history cleared successfully'
     });
 
   } catch (error) {

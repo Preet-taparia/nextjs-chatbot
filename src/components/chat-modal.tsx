@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ChatContainer from '@/components/ui/chat-container';
+import ChatContainer from '@/components/chat-container';
 
 interface ChatModalProps {
   isOpen: boolean;

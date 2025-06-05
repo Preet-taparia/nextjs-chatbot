@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Message, SendMessageRequest, SendMessageResponse } from '@/types/chat';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 const ChatContainer: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,17 +23,9 @@ const ChatContainer: React.FC = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Generate session ID on mount
-  useEffect(() => {
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    setSessionId(newSessionId);
-  }, []);
-
   const loadChatHistory = useCallback(async () => {
-    if (!sessionId) return;
-
     try {
-      const response = await fetch(`/api/chat?sessionId=${sessionId}`);
+      const response = await fetch('/api/chat');
       const data = await response.json();
 
       if (data.success && data.data.messages) {
@@ -42,9 +33,11 @@ const ChatContainer: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading chat history:', error);
+      setError('Failed to load chat history');
     }
-  }, [sessionId]);
+  }, []);
 
+  // Load chat history on component mount
   useEffect(() => {
     loadChatHistory();
   }, [loadChatHistory]);
@@ -55,20 +48,18 @@ const ChatContainer: React.FC = () => {
     setError('');
     setIsLoading(true);
 
-    const userMessage: Message = {
+    const tempUserMessage: Message = {
       id: `temp_${Date.now()}`,
       role: 'user',
       content: content.trim(),
-      timestamp: new Date(),
-      sessionId
+      timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, tempUserMessage]);
 
     try {
       const requestData: SendMessageRequest = {
-        message: content.trim(),
-        sessionId
+        message: content.trim()
       };
 
       const response = await fetch('/api/chat', {
@@ -83,8 +74,8 @@ const ChatContainer: React.FC = () => {
 
       if (data.success && data.data) {
         setMessages(prev => {
-          const filtered = prev.filter(msg => msg.id !== userMessage.id);
-          return [...filtered, data.data!.userMessage, data.data!.aiResponse];
+          const withoutTemp = prev.filter(msg => msg.id !== tempUserMessage.id);
+          return [...withoutTemp, data.data!.userMessage, data.data!.aiResponse];
         });
       } else {
         throw new Error(data.error || 'Failed to send message');
@@ -93,17 +84,15 @@ const ChatContainer: React.FC = () => {
       console.error('Error sending message:', error);
       setError(error instanceof Error ? error.message : 'Something went wrong');
       
-      setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+      setMessages(prev => prev.filter(msg => msg.id !== tempUserMessage.id));
     } finally {
       setIsLoading(false);
     }
   };
 
   const clearChat = async () => {
-    if (!sessionId) return;
-
     try {
-      const response = await fetch(`/api/chat?sessionId=${sessionId}`, {
+      const response = await fetch('/api/chat', {
         method: 'DELETE',
       });
 
@@ -119,11 +108,6 @@ const ChatContainer: React.FC = () => {
       console.error('Error clearing chat:', error);
       setError(error instanceof Error ? error.message : 'Failed to clear chat');
     }
-  };
-
-  const refreshChat = () => {
-    loadChatHistory();
-    setError('');
   };
 
   return (
@@ -191,22 +175,12 @@ const ChatContainer: React.FC = () => {
       {messages.length > 0 && (
         <div className="flex items-center justify-center gap-2 px-4 py-2 border-t border-border">
           <button
-            onClick={refreshChat}
-            className={cn(
-              "p-2 rounded-lg hover:bg-muted transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            )}
-            title="Refresh chat"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <button
             onClick={clearChat}
             className={cn(
               "p-2 rounded-lg hover:bg-muted transition-colors",
               "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             )}
-            title="Clear chat history"
+            title="Clear all chat history"
           >
             <Trash2 size={16} />
           </button>

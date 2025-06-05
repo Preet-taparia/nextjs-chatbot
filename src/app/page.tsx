@@ -1,9 +1,8 @@
-// app/page.tsx
 "use client";
 
 import React, { useState } from 'react';
-import FloatingChatButton from '@/components/ui/floating-chat-button';
-import ChatModal from '@/components/ui/chat-modal';
+import FloatingChatButton from '@/components/floating-chat-button';
+import ChatModal from '@/components/chat-modal';
 
 const HomePage: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -19,7 +18,6 @@ const HomePage: React.FC = () => {
   return (
     <main className="min-h-screen bg-background">
       
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
@@ -64,13 +62,11 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Chat Button */}
       <FloatingChatButton
         isOpen={isChatOpen}
         onClick={toggleChat}
       />
 
-      {/* Chat Modal */}
       <ChatModal
         isOpen={isChatOpen}
         onClose={closeChat}

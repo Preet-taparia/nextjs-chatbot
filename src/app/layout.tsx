@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vercel AI Chatbot",
-  description: "Vercel AI Chatbot",
+  title: "AI Chatbot Nextjs",
+  description: "AI Chatbot Nextjs",
 };
 
 export default function RootLayout({

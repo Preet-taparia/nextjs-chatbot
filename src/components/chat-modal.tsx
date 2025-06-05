@@ -72,10 +72,10 @@ const ChatModal: React.FC<ChatModalProps> = ({
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  AI Chat Assistant
+                  TechInterview Pro Assistant
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Ask me anything, I am here to help!
+                  Ask about our platform, pricing, or interview prep tips!
                 </p>
               </div>
               <button

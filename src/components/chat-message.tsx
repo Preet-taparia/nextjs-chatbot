@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Message } from '@/types/chat';
 import { cn } from '@/lib/utils';
 import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessageProps {
   message: Message;
@@ -40,7 +42,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         )}
       </div>
 
-      {/* Message content */}
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-2">
           <span className={cn(
@@ -59,10 +60,40 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         </div>
 
         <div className={cn(
-          "text-sm leading-relaxed whitespace-pre-wrap",
+          "text-sm",
           isUser ? "text-foreground" : "text-foreground"
         )}>
-          {message.content}
+          <div className="max-w-none text-foreground">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => (
+                  <p className="my-0 leading-relaxed text-foreground">{children}</p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc pl-5 space-y-1 text-foreground">{children}</ul>
+                ),
+                li: ({ children }) => (
+                  <li className="text-foreground">{children}</li>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold">{children}</strong>
+                ),
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {message.content.trim().replace(/\n{2,}/g, '\n\n')}
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
     </motion.div>

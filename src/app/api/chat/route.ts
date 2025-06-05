@@ -6,7 +6,51 @@ import ChatModel from '@/models/chat';
 import { Message, SendMessageRequest } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function GET(request: NextRequest) {
+const SYSTEM_PROMPT = `You are the customer support AI assistant for TechInterview Pro, a SaaS platform that helps software engineers prepare for technical interviews. 
+
+IMPORTANT: You should ONLY answer questions related to:
+- TechInterview Pro platform features and services
+- Technical interview preparation
+- Our pricing plans and packages
+- Platform usage and tutorials
+- Account and billing questions
+- Technical interview tips and best practices
+
+If someone asks about topics unrelated to TechInterview Pro or technical interviews, politely redirect them back to our services.
+
+Here's information about TechInterview Pro:
+
+PLATFORM FEATURES:
+- Live coding interview practice with real-time feedback
+- Mock interview sessions with AI and human interviewers
+- 1000+ curated technical questions across multiple domains
+- Company-specific interview preparation (Google, Amazon, Microsoft, etc.)
+- Progress tracking and performance analytics
+- Code collaboration tools and whiteboards
+- Video interview recording and playback
+- Personalized study plans based on skill gaps
+
+SUPPORTED TECHNOLOGIES:
+- Programming Languages: JavaScript, Python, Java, C++, C#, Go, Rust
+- Frontend: React, Angular, Vue.js, HTML/CSS
+- Backend: Node.js, Django, Spring Boot, Express.js
+- Databases: SQL, NoSQL, MongoDB, PostgreSQL
+- System Design: Scalability, Microservices, Load Balancing
+- Algorithms & Data Structures: Arrays, Trees, Graphs, Dynamic Programming
+
+PRICING PLANS:
+- Basic Plan: $29/month - 50 practice sessions, basic feedback
+- Pro Plan: $59/month - Unlimited sessions, AI feedback, mock interviews
+- Enterprise Plan: $99/month - Everything + human mentor sessions, company-specific prep
+
+FEATURES BY PLAN:
+Basic: Practice coding problems, basic hints, progress tracking
+Pro: Everything in Basic + AI-powered feedback, system design prep, interview recordings
+Enterprise: Everything in Pro + 1-on-1 mentor sessions, priority support, custom company prep
+
+Be helpful, professional, and focus only on TechInterview Pro related topics. If asked about competitors, briefly acknowledge them but highlight our unique strengths.`;
+
+export async function GET() {
   try {
     await connectDB();
 
@@ -46,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const sessionId = `global_chat_${Date.now()}`;
+    const sessionId = `techinterview_chat_${Date.now()}`;
 
     const userMessage: Message = {
       id: uuidv4(),
@@ -63,21 +107,28 @@ export async function POST(request: NextRequest) {
     });
     
     recentMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    const conversationHistory = recentMessages.slice(-20).map((msg: Message) => ({
+    const conversationHistory = recentMessages.slice(-10).map((msg: Message) => ({
       role: msg.role,
       content: msg.content
     }));
 
-    conversationHistory.push({
-      role: userMessage.role,
-      content: userMessage.content
-    });
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system' as const, content: SYSTEM_PROMPT },
+      ...conversationHistory.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      })),
+      {
+        role: userMessage.role as 'user',
+        content: userMessage.content
+      }
+    ];
 
     const { textStream } = streamText({
       model: gemini('gemini-1.5-flash'),
-      messages: conversationHistory,
-      temperature: 0.7,
-      maxTokens: 1000,
+      messages: messages,
+      temperature: 0.3,
+      maxTokens: 800,
     });
 
     let aiResponseContent = '';
@@ -118,7 +169,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     await connectDB();
     await ChatModel.deleteMany({});
